@@ -1,0 +1,35 @@
+import pyttsx3
+import os
+import sys
+from yolov5 import detect
+
+# Initialize TTS engine
+engine = pyttsx3.init()
+engine.setProperty('volume', 1.0)  # Set volume to max
+
+# Check available voices
+voices = engine.getProperty('voices')
+if voices:
+    engine.setProperty('voice', voices[0].id)  # Use the first available voice
+else:
+    print("No voices found! TTS may not work.")
+
+def detect_sign_language(source):
+    results = detect.run(weights='best.pt', source=source)
+    detected_classes = [results.names[int(cls)] for cls in results.pandas().xyxy[0]['class'].tolist()]
+
+    if detected_classes:
+        for detected_class in detected_classes:
+            print(f"Detected: {detected_class}")
+            try:
+                engine.say(detected_class)
+                engine.runAndWait()
+            except Exception as e:
+                print(f"Error with pyttsx3: {e}")
+                os.system(f'say "{detected_class}"')  # Use macOS say as fallback
+    else:
+        print("No sign detected.")
+
+if __name__ == "__main__":
+    source = sys.argv[1] if len(sys.argv) > 1 else 0
+    detect_sign_language(source)
